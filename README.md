@@ -1,1 +1,1 @@
-# VK-bot
+Secret Box Bot
