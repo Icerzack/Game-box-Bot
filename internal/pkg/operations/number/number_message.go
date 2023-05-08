@@ -26,7 +26,7 @@ func SendNumberMessage(cfg *config.Config, peerID int) error {
 	buttonsText := []string{SetInterval, Confirm}
 	keyboardJSON := keyboard.GenerateKeyboard3x1(buttonsText)
 
-	text := `С помощью кнопок ниже установи min и max. По умолчанию 0-10. 
+	text := `С помощью кнопки ниже установи интервал. По умолчанию 0-10. 
 
 Как закончишь, жми "✅Подтвердить".`
 
