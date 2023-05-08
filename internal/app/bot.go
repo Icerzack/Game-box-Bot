@@ -7,6 +7,7 @@ import (
 	coinOperations "VK-bot/internal/pkg/operations/coin"
 	commonOperations "VK-bot/internal/pkg/operations/common"
 	diceOperations "VK-bot/internal/pkg/operations/dice"
+	numberOperations "VK-bot/internal/pkg/operations/number"
 	welcomeOperations "VK-bot/internal/pkg/operations/welcome"
 	wordOperations "VK-bot/internal/pkg/operations/word"
 	"encoding/json"
@@ -108,6 +109,18 @@ func (b *Bot) updateHandler(upd vkAPI.Update) {
 			messageChan := make(chan string)
 			b.openedChannels[senderID] = messageChan
 			go b.wordHandler(senderID)
+		case numberOperations.GetANumber:
+			if _, ok := b.openedChannels[senderID]; ok {
+				return
+			}
+			err := numberOperations.SendNumberMessage(&b.cfg, senderID)
+			if err != nil {
+				b.log(fmt.Sprintf("Failed to send number message: %s", err))
+				return
+			}
+			messageChan := make(chan string)
+			b.openedChannels[senderID] = messageChan
+			go b.numberHandler(senderID)
 		default:
 			err := commonOperations.SendNoOpMessage(&b.cfg, senderID)
 			if err != nil {
