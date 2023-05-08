@@ -35,6 +35,7 @@ func (b *Bot) Start() {
 		b.log(fmt.Sprintf("%s", err))
 		return
 	}
+	b.log("Bot successfully launched up!\nLongPoll server parameters:\n " + server + " \n" + key)
 	for {
 		resp, err := b.getUpdates(server, key, ts, b.cfg.Wait)
 		if err != nil {
