@@ -5,12 +5,13 @@ import (
 	vkAPI "VK-bot/internal/pkg/api"
 	updateObjects "VK-bot/internal/pkg/api/objects"
 	coinOperations "VK-bot/internal/pkg/operations/coin"
+	commonOperations "VK-bot/internal/pkg/operations/common"
+	diceOperations "VK-bot/internal/pkg/operations/dice"
 	welcomeOperations "VK-bot/internal/pkg/operations/welcome"
+	wordOperations "VK-bot/internal/pkg/operations/word"
 	"encoding/json"
 	"fmt"
-	"math/rand"
 	"net/http"
-	"time"
 )
 
 type Bot struct {
@@ -64,14 +65,14 @@ func (b *Bot) updateHandler(upd vkAPI.Update) {
 			return
 		}
 
-		if receivedText == "Начать" {
+		switch receivedText {
+		case "Начать":
 			err := welcomeOperations.SendWelcomeMessage(&b.cfg, senderID)
 			if err != nil {
 				b.log(fmt.Sprintf("Failed to send welcome message: %s", err))
 				return
 			}
-		}
-		if receivedText == coinOperations.TossACoin {
+		case coinOperations.TossACoin:
 			if _, ok := b.openedChannels[senderID]; ok {
 				return
 			}
@@ -83,55 +84,38 @@ func (b *Bot) updateHandler(upd vkAPI.Update) {
 			messageChan := make(chan string)
 			b.openedChannels[senderID] = messageChan
 			go b.coinHandler(senderID)
-		}
-
-	}
-}
-
-func (b *Bot) coinHandler(forID int) {
-	ch := b.openedChannels[forID]
-	defer func() {
-		close(ch)
-		delete(b.openedChannels, forID)
-	}()
-
-	inp := ""
-
-Loop:
-	for {
-		select {
-		case inp = <-ch:
-			if inp != coinOperations.Heads && inp != coinOperations.Tails {
-				err := coinOperations.SendWrongMessage(&b.cfg, forID)
-				if err != nil {
-					b.log(fmt.Sprintf("Failed to send wrong-coin message: %s", err))
-					return
-				}
-			} else {
-				break Loop
+		case diceOperations.TossADice:
+			if _, ok := b.openedChannels[senderID]; ok {
+				return
+			}
+			err := diceOperations.SendDiceMessage(&b.cfg, senderID)
+			if err != nil {
+				b.log(fmt.Sprintf("Failed to send dice message: %s", err))
+				return
+			}
+			messageChan := make(chan string)
+			b.openedChannels[senderID] = messageChan
+			go b.diceHandler(senderID)
+		case wordOperations.GetAWord:
+			if _, ok := b.openedChannels[senderID]; ok {
+				return
+			}
+			err := wordOperations.SendWordMessage(&b.cfg, senderID)
+			if err != nil {
+				b.log(fmt.Sprintf("Failed to send word message: %s", err))
+				return
+			}
+			messageChan := make(chan string)
+			b.openedChannels[senderID] = messageChan
+			go b.wordHandler(senderID)
+		default:
+			err := commonOperations.SendNoOpMessage(&b.cfg, senderID)
+			if err != nil {
+				b.log(fmt.Sprintf("Failed to send no-op message: %s", err))
+				return
 			}
 		}
 	}
-
-	coin := [...]string{coinOperations.Heads, coinOperations.Tails}
-
-	rand.Seed(time.Now().UnixNano())
-	randomSide := coin[rand.Intn(len(coin))]
-
-	if inp == randomSide {
-		err := coinOperations.SendResultMessage(&b.cfg, forID, true, randomSide)
-		if err != nil {
-			b.log(fmt.Sprintf("Failed to send result-coin message: %s", err))
-			return
-		}
-	} else {
-		err := coinOperations.SendResultMessage(&b.cfg, forID, false, randomSide)
-		if err != nil {
-			b.log(fmt.Sprintf("Failed to send result-coin message: %s", err))
-			return
-		}
-	}
-
 }
 
 func (b *Bot) SetDebugMode(mode bool) {

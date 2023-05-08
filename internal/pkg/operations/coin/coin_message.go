@@ -62,9 +62,6 @@ func SendResultMessage(cfg *config.Config, peerID int, isWin bool, chosenSide st
 	max := int32(math.MaxInt32)
 	randomInt := rand.Int31n(max)
 
-	buttonsText := []string{Heads, Tails}
-	keyboardJSON := keyboard.GenerateKeyboard2x2(buttonsText)
-
 	text := ""
 	if isWin {
 		text = "Повезло! " + chosenSide + "!"
@@ -72,7 +69,7 @@ func SendResultMessage(cfg *config.Config, peerID int, isWin bool, chosenSide st
 		text = "Эх, не повезло: " + chosenSide + "."
 	}
 
-	urlToSend := fmt.Sprintf("%smessages.send?peer_id=%d&message=%s&group_id=%s&random_id=%d&access_token=%s&v=%s&keyboard=%s", cfg.ApiURL, peerID, url.QueryEscape(text), cfg.GroupID, randomInt, cfg.Token, cfg.ApiVer, url.QueryEscape(string(keyboardJSON)))
+	urlToSend := fmt.Sprintf("%smessages.send?peer_id=%d&message=%s&group_id=%s&random_id=%d&access_token=%s&v=%s", cfg.ApiURL, peerID, url.QueryEscape(text), cfg.GroupID, randomInt, cfg.Token, cfg.ApiVer)
 	_, err := http.Get(urlToSend)
 	if err != nil {
 		return err
