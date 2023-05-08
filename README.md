@@ -27,7 +27,7 @@
 |       |   |   └── message_new.go      - Object JSON-структура события "message_new" согласно спецификации VK API
 |       |   └── long_poll.go            - Основные JSON-структуры для работы с VK LongPoll API
 |       ├── keyboard
-|       |   ├── generator.go            - Методы для генерация клавиаутры 
+|       |   ├── generator.go            - Методы для генерация клавиатуры 
 |       |   └── model.go                - Структуры описания генерируемой клавиатуры
 |       └── operations
 |           ├── coin
