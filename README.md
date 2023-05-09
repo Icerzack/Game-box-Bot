@@ -89,7 +89,3 @@ GROUP_ID=YOUR_GROUP_ID
  ```
  3. Пример логов через интерфейс Docker Desktop
 <img width="434" alt="photo" src="https://user-images.githubusercontent.com/24461208/236918405-2c4f0296-4eb3-43c0-b44f-78e20907f3fd.png">
-
-
-## Тесты
-... Ожидается ...
