@@ -3,10 +3,11 @@ package welcome
 import (
 	"VK-bot/internal/config"
 	"VK-bot/internal/pkg/keyboard"
-	"VK-bot/internal/pkg/operations/coin"
-	"VK-bot/internal/pkg/operations/dice"
-	"VK-bot/internal/pkg/operations/number"
-	"VK-bot/internal/pkg/operations/word"
+	"VK-bot/internal/pkg/modes/coin"
+	"VK-bot/internal/pkg/modes/dice"
+	"VK-bot/internal/pkg/modes/number"
+	"VK-bot/internal/pkg/modes/room"
+	"VK-bot/internal/pkg/modes/word"
 	"fmt"
 	"math"
 	"math/rand"
@@ -20,8 +21,8 @@ func SendWelcomeMessage(cfg *config.Config, peerID int) error {
 	max := int32(math.MaxInt32)
 	randomInt := rand.Int31n(max)
 
-	buttonsText := []string{coin.TossACoin, dice.TossADice, word.GetAWord, number.GetANumber}
-	keyboardJSON := keyboard.GenerateKeyboard2x2(buttonsText)
+	buttonsText := []string{coin.TossACoin, dice.TossADice, word.GetAWord, number.GetANumber, room.EnterRoom}
+	keyboardJSON := keyboard.GenerateKeyboard2xn(buttonsText)
 
 	text := `
 Привет!

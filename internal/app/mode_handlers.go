@@ -1,11 +1,12 @@
 package app
 
 import (
-	coinOperations "VK-bot/internal/pkg/operations/coin"
-	commonOperations "VK-bot/internal/pkg/operations/common"
-	diceOperations "VK-bot/internal/pkg/operations/dice"
-	numberOperations "VK-bot/internal/pkg/operations/number"
-	wordOperations "VK-bot/internal/pkg/operations/word"
+	coinOperations "VK-bot/internal/pkg/modes/coin"
+	commonOperations "VK-bot/internal/pkg/modes/common"
+	diceOperations "VK-bot/internal/pkg/modes/dice"
+	numberOperations "VK-bot/internal/pkg/modes/number"
+	roomOperations "VK-bot/internal/pkg/modes/room"
+	wordOperations "VK-bot/internal/pkg/modes/word"
 	"encoding/json"
 	"fmt"
 	"math/rand"
@@ -269,5 +270,148 @@ Loop:
 	if err != nil {
 		b.log(fmt.Sprintf("Failed to send default message: %s", err))
 		return
+	}
+}
+
+func (b *Bot) roomHandler(forID int) {
+	ch := b.openedChannels[forID]
+	defer func() {
+		close(ch)
+		delete(b.openedChannels, forID)
+	}()
+
+	var input string
+
+Loop:
+	for {
+		select {
+		case input = <-ch:
+			if input != roomOperations.CreateRoom && input != roomOperations.JoinRoom && input != roomOperations.Exit {
+				err := roomOperations.SendWrongMessage(&b.cfg, forID)
+				if err != nil {
+					b.log(fmt.Sprintf("Failed to send wrong-room message: %s", err))
+					return
+				}
+			} else {
+				break Loop
+			}
+		}
+	}
+
+	if input == roomOperations.Exit {
+		err := commonOperations.SendDefaultMessage(&b.cfg, forID)
+		if err != nil {
+			b.log(fmt.Sprintf("Failed to send default message: %s", err))
+			return
+		}
+		return
+	}
+
+	var roomID int32
+
+	if input == roomOperations.CreateRoom {
+		err := roomOperations.SendEnterUsernameMessage(&b.cfg, forID)
+		if err != nil {
+			b.log(fmt.Sprintf("Failed to send enterusername-room message: %s", err))
+			return
+		}
+		select {
+		case input = <-ch:
+		}
+		roomID = roomOperations.CreateNewRoom(&b.roomsHub, forID, input)
+		err = roomOperations.SendGeneratedRoomCodeMessage(&b.cfg, forID, strconv.Itoa(int(roomID)))
+		if err != nil {
+			b.log(fmt.Sprintf("Failed to send generatedroomcode-room message: %s", err))
+			return
+		}
+	}
+
+	if input == roomOperations.JoinRoom {
+		err := roomOperations.SendEnterUsernameMessage(&b.cfg, forID)
+		if err != nil {
+			b.log(fmt.Sprintf("Failed to send enterusername-room message: %s", err))
+			return
+		}
+
+		var username string
+		select {
+		case input = <-ch:
+		}
+		username = input
+
+		err = roomOperations.SendEnterRoomCodeMessage(&b.cfg, forID)
+		if err != nil {
+			b.log(fmt.Sprintf("Failed to send enterroomcode-room message: %s", err))
+			return
+		}
+
+		select {
+		case input = <-ch:
+		}
+
+		num, err := strconv.Atoi(input)
+		if err == nil {
+			roomID = int32(num)
+			isSuccessful := roomOperations.JoinRoomWithID(&b.roomsHub, roomID, forID, username)
+			if !isSuccessful {
+				err := roomOperations.SendNoRoomFoundMessage(&b.cfg, forID)
+				if err != nil {
+					b.log(fmt.Sprintf("Failed to send noroomfound-room message: %s", err))
+					return
+				}
+				err = commonOperations.SendDefaultMessage(&b.cfg, forID)
+				if err != nil {
+					b.log(fmt.Sprintf("Failed to send default message: %s", err))
+					return
+				}
+				return
+			}
+		} else {
+			err := roomOperations.SendNoRoomFoundMessage(&b.cfg, forID)
+			if err != nil {
+				b.log(fmt.Sprintf("Failed to send noroomfound-room message: %s", err))
+				return
+			}
+			err = commonOperations.SendDefaultMessage(&b.cfg, forID)
+			if err != nil {
+				b.log(fmt.Sprintf("Failed to send default message: %s", err))
+				return
+			}
+			return
+		}
+	}
+
+	err := roomOperations.SendRoomStatusMessage(&b.cfg, b.roomsHub.Rooms[roomID])
+	if err != nil {
+		b.log(fmt.Sprintf("Failed to send roomstatus-room message: %s", err))
+		return
+	}
+
+	for {
+		select {
+		case input = <-ch:
+			if input == roomOperations.Exit {
+				roomDeleted := roomOperations.DeleteUserFromRoom(&b.roomsHub, roomID, forID)
+				if !roomDeleted {
+					err := roomOperations.SendRoomStatusMessage(&b.cfg, b.roomsHub.Rooms[roomID])
+					if err != nil {
+						b.log(fmt.Sprintf("Failed to send roomstatus-room message: %s", err))
+						return
+					}
+				}
+				err = commonOperations.SendDefaultMessage(&b.cfg, forID)
+				if err != nil {
+					b.log(fmt.Sprintf("Failed to send default message: %s", err))
+					return
+				}
+				return
+			}
+			roomOperations.ModifyUserValueInRoom(&b.roomsHub, roomID, forID, input)
+			err := roomOperations.SendRoomStatusMessage(&b.cfg, b.roomsHub.Rooms[roomID])
+			if err != nil {
+				b.log(fmt.Sprintf("Failed to send roomstatus-room message: %s", err))
+				return
+			}
+		}
 	}
 }

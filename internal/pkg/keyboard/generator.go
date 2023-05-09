@@ -5,11 +5,11 @@ import (
 	"fmt"
 )
 
-// GenerateKeyboard2x2 Генерирует клавиатуру размером 2x2 (две строки по две кнопки в каждой)
+// GenerateKeyboard2xn Генерирует клавиатуру размером 2xn (n строк по две кнопки в каждой)
 // и возвращает JSON объект клавиатуры с переданными параметрами
 //
 // Все кнопки имеют type:"text"
-func GenerateKeyboard2x2(buttonsText []string) []byte {
+func GenerateKeyboard2xn(buttonsText []string) []byte {
 	var buttons [][]button
 
 	for i := 0; i < len(buttonsText); i += 2 {
@@ -126,40 +126,48 @@ func GenerateKeyboard3x1(buttonsText []string) []byte {
 func GenerateKeyboard1x3(buttonsText []string) []byte {
 	var buttons [][]button
 
-	row1 := make([]button, 0, 1)
-	row2 := make([]button, 0, 1)
-	row3 := make([]button, 0, 1)
+	for i := 0; i < 3; i++ {
+		row := make([]button, 0, 1)
+		row = append(row, button{
+			Action: buttonAction{
+				Type:    "text",
+				Label:   buttonsText[i],
+				Payload: fmt.Sprintf("{\"button\":%d}", i),
+			},
+			Color: "primary",
+		})
+		buttons = append(buttons, row)
+	}
 
-	row1 = append(row1, button{
-		Action: buttonAction{
-			Type:    "text",
-			Label:   buttonsText[0],
-			Payload: fmt.Sprintf("{\"button\":%d}", 0),
-		},
-		Color: "primary",
-	})
+	keyboard := keyboard{
+		OneTime: true,
+		Buttons: buttons,
+	}
 
-	row2 = append(row2, button{
-		Action: buttonAction{
-			Type:    "text",
-			Label:   buttonsText[1],
-			Payload: fmt.Sprintf("{\"button\":%d}", 1),
-		},
-		Color: "primary",
-	})
+	keyboardJSON, _ := json.Marshal(keyboard)
 
-	row3 = append(row3, button{
-		Action: buttonAction{
-			Type:    "text",
-			Label:   buttonsText[2],
-			Payload: fmt.Sprintf("{\"button\":%d}", 2),
-		},
-		Color: "primary",
-	})
+	return keyboardJSON
+}
 
-	buttons = append(buttons, row1)
-	buttons = append(buttons, row2)
-	buttons = append(buttons, row3)
+// GenerateKeyboard1x1 Генерирует клавиатуру размером 1x1 (одна кнопка)
+// и возвращает JSON объект клавиатуры с переданными параметрами
+//
+// Все кнопки имеют type:"text"
+func GenerateKeyboard1x1(buttonsText []string) []byte {
+	var buttons [][]button
+
+	for i := 0; i < 1; i++ {
+		row := make([]button, 0, 1)
+		row = append(row, button{
+			Action: buttonAction{
+				Type:    "text",
+				Label:   buttonsText[i],
+				Payload: fmt.Sprintf("{\"button\":%d}", i),
+			},
+			Color: "primary",
+		})
+		buttons = append(buttons, row)
+	}
 
 	keyboard := keyboard{
 		OneTime: true,
