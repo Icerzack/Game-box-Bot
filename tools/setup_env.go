@@ -7,8 +7,8 @@ import (
 	"strings"
 )
 
-func LoadEnv() {
-	file, err := os.Open(".env")
+func LoadEnv(path string) {
+	file, err := os.Open(path)
 	if err != nil {
 		fmt.Printf("Failed to open .env file: %v\n", err)
 	}

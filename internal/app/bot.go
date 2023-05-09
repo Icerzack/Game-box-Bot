@@ -30,26 +30,27 @@ func NewBot(cfg botConfig.Config) *Bot {
 }
 
 func (b *Bot) Start() {
-	server, key, ts, err := b.getLongPollServer()
+	longPollServerResponse, err := b.getLongPollServer()
 	if err != nil {
 		b.log(fmt.Sprintf("%s", err))
 		return
 	}
-	b.log("Bot successfully launched up!\nLongPoll server parameters:\n " + server + " \n" + key)
+	b.log("Bot successfully launched up!\nLongPoll server parameters:\nSERVER: " + longPollServerResponse.Server + "\nKEY: " + longPollServerResponse.Key)
+	ts := longPollServerResponse.Ts
 	for {
-		resp, err := b.getUpdates(server, key, ts, b.cfg.Wait)
+		resp, err := b.getUpdates(longPollServerResponse.Server, longPollServerResponse.Key, ts, b.cfg.Wait)
 		if err != nil {
 			b.log(fmt.Sprintf("%s", err))
 			return
 		}
 		for _, upd := range resp.Updates {
-			go b.updateHandler(upd)
+			go b.updateHandler(&upd)
 		}
 		ts = resp.Ts
 	}
 }
 
-func (b *Bot) updateHandler(upd vkAPI.Update) {
+func (b *Bot) updateHandler(upd *vkAPI.Update) {
 	switch upd.Type {
 	case updateObjects.NewMessage:
 		var messageObject updateObjects.MessageNewObject
@@ -143,11 +144,11 @@ func (b *Bot) log(message string) {
 	fmt.Println(message)
 }
 
-func (b *Bot) getLongPollServer() (string, string, string, error) {
+func (b *Bot) getLongPollServer() (*vkAPI.LongPollServerResponse, error) {
 	urlToSend := fmt.Sprintf("%sgroups.getLongPollServer?group_id=%s&access_token=%s&v=%s", b.cfg.ApiURL, b.cfg.GroupID, b.cfg.Token, b.cfg.ApiVer)
 	resp, err := http.Get(urlToSend)
 	if err != nil {
-		return "", "", "", err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
@@ -155,12 +156,12 @@ func (b *Bot) getLongPollServer() (string, string, string, error) {
 
 	err = json.NewDecoder(resp.Body).Decode(&longPollServer)
 	if err != nil {
-		return "", "", "", err
+		return nil, err
 	}
-	return longPollServer.Response.Server, longPollServer.Response.Key, longPollServer.Response.Ts, nil
+	return &longPollServer.Response, nil
 }
 
-func (b *Bot) getUpdates(server, key, ts, wait string) (*vkAPI.LongPollResponse, error) {
+func (b *Bot) getUpdates(server, key, ts, wait string) (*vkAPI.LongPollUpdateResponse, error) {
 	urlToSend := fmt.Sprintf("%s?act=a_check&key=%s&ts=%s&wait=%s", server, key, ts, wait)
 	resp, err := http.Get(urlToSend)
 	if err != nil {
@@ -168,7 +169,7 @@ func (b *Bot) getUpdates(server, key, ts, wait string) (*vkAPI.LongPollResponse,
 	}
 	defer resp.Body.Close()
 
-	var lpResp vkAPI.LongPollResponse
+	var lpResp vkAPI.LongPollUpdateResponse
 	err = json.NewDecoder(resp.Body).Decode(&lpResp)
 	if err != nil {
 		return nil, err

@@ -14,7 +14,7 @@ const (
 )
 
 func main() {
-	tools.LoadEnv()
+	tools.LoadEnv(".env")
 
 	bot := app.NewBot(config.Config{
 		Token:   os.Getenv("TOKEN"),

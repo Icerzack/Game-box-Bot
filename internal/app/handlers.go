@@ -22,7 +22,7 @@ func (b *Bot) coinHandler(forID int) {
 		delete(b.openedChannels, forID)
 	}()
 
-	input := ""
+	var input string
 
 Loop:
 	for {
@@ -72,7 +72,7 @@ func (b *Bot) diceHandler(forID int) {
 		delete(b.openedChannels, forID)
 	}()
 
-	input := ""
+	var input string
 
 Loop:
 	for {
@@ -136,7 +136,7 @@ func (b *Bot) wordHandler(forID int) {
 		delete(b.openedChannels, forID)
 	}()
 
-	input := ""
+	var input string
 
 Loop:
 	for {
@@ -197,7 +197,7 @@ func (b *Bot) numberHandler(forID int) {
 		delete(b.openedChannels, forID)
 	}()
 
-	input := ""
+	var input string
 	lowBound, topBound := 0, 10
 
 Loop:
