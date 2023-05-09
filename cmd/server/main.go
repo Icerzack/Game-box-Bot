@@ -3,22 +3,24 @@ package main
 import (
 	"VK-bot/internal/app"
 	"VK-bot/internal/config"
+	"VK-bot/tools"
+	"os"
 )
 
 const (
-	token   = "YOUR_TOKEN"
-	apiURL  = "https://api.vk.com/method/"
-	apiVer  = "5.131"
-	groupID = "YOUR_GROUP_ID"
-	wait    = "25"
+	apiURL = "https://api.vk.com/method/"
+	apiVer = "5.131"
+	wait   = "25"
 )
 
 func main() {
+	tools.LoadEnv()
+
 	bot := app.NewBot(config.Config{
-		Token:   token,
+		Token:   os.Getenv("TOKEN"),
 		ApiURL:  apiURL,
 		ApiVer:  apiVer,
-		GroupID: groupID,
+		GroupID: os.Getenv("GROUP_ID"),
 		Wait:    wait,
 	})
 
