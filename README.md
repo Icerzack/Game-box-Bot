@@ -12,12 +12,18 @@
 
 Структура директорий проекта выглядит следующим образом:
 ```markdown
+├── .github
+|   └── workflows
+|       └── test.yml                    - Файл конфигурации CI
+├── build
+|   └── Dockerfile                      - Docker образ для запуска бота
 ├── cmd
 |   └── server
 |       └── main.go                     - Запускающий файл
 ├── internal
 |   ├── app
 |   |   ├── bot.go                      - Основная логика бота
+|   |   ├── bot_test.go                 - Тесты для главной логики бота
 |   |   └── handlers.go                 - Вспомогательные хэндлеры для обработки каждого из событий
 |   ├── config
 |   |   └── config.go                   - Конфигурация бота
@@ -47,7 +53,6 @@
 |   └── setup_env.go                    - Вспомогательная утилита для установки переменных окружения из .env файла
 ├── .env
 ├── .gitignore
-├── Dockerfile
 ├── go.mod
 ├── README.md
 ```
@@ -58,13 +63,13 @@
 TOKEN=YOUR_API_TOKEN
 GROUP_ID=YOUR_GROUP_ID
  ```
-заместо **"YOUR_API_TOKEN"** и **"YOUR_GROUP_ID"** нужно указать значения **Ключа доступа** и **ID группы**, от лица которой бот будет отправлять сообщения. Оба этих параметра могут быть получены из настроек сообщества.
+Вместо **"YOUR_API_TOKEN"** и **"YOUR_GROUP_ID"** нужно указать значения **Ключа доступа** и **ID группы**, от лица которой бот будет отправлять сообщения. Оба этих параметра могут быть получены из настроек сообщества.
 
-Проект содержит **Dockerfile**, поэтому рекомендуется запускать проект через него. Пример запуска:
+Проект содержит **build/Dockerfile**, поэтому рекомендуется запускать проект через него. Пример запуска:
 
  1. Создание образа
  ```bash
- $ sudo docker build -t vk-bot .
+ $ sudo docker build -t vk-bot build
  ```
  ```bash
 [+] Building 2.1s (8/8) FINISHED                                                                                                                   
@@ -89,3 +94,41 @@ GROUP_ID=YOUR_GROUP_ID
  ```
  3. Пример логов через интерфейс Docker Desktop
 <img width="434" alt="photo" src="https://user-images.githubusercontent.com/24461208/236918405-2c4f0296-4eb3-43c0-b44f-78e20907f3fd.png">
+## Тесты и CI
+Проект содержит один файл **(internal/app/bot_test.go)**, который тестирует главный и минимальный функционал приложения.
+
+В проекте был настроен простой CI для запуска кода на тестах.
+Файл настройки может быть найден по следующему пути: **.github/workflows/test.yml**
+и имеет следующий вид:
+```yml
+name: test
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.19
+
+      - name: Set up environment variables
+        run: |
+           echo "TOKEN=${{ secrets.API_KEY }}" >> .env
+           echo "GROUP_ID=${{ secrets.GROUP_ID }}" >> .env
+
+      - name: Test
+        run: go test -v VK-bot/internal/app
+ ```
+**"secrets.API_KEY"** и **"secrets.GROUP_ID"** это существующие данные для запуски бота,
+которые скрыты от публичного доступа. Поэтому, при каждом push или pull-request код запускается на тестах с этими данными.
