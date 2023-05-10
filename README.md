@@ -95,26 +95,34 @@ GROUP_ID=YOUR_GROUP_ID
 
 Проект содержит **build/Dockerfile**, поэтому рекомендуется запускать проект через него. Пример запуска:
 
- 1. Создание образа
+ 1. Создание образа (запускается в корне проекта)
  ```bash
- $ sudo docker build -t vk-bot build
+ $ docker build -f build/Dockerfile -t vk-bot .
  ```
  ```bash
-[+] Building 2.1s (8/8) FINISHED                                                                                                                   
- => [internal] load build definition from Dockerfile                                                           0.0s
- => => transferring dockerfile: 36B                                                                            0.0s
- => [internal] load .dockerignore                                                                              0.0s
- => => transferring context: 2B                                                                                0.0s
- => [internal] load metadata for docker.io/library/golang:1.19                                                 1.9s
- => [internal] load build context                                                                              0.0s
- => => transferring context: 16.78kB                                                                           0.0s
- => [1/3] FROM docker.io/library/golang:1.19@sha256:86af5649                                                   0.0s
- => CACHED [2/3] WORKDIR /app                                                                                  0.0s
- => [3/3] COPY . ./                                                                                            0.0s
- => exporting to image                                                                                         0.0s
- => => exporting layers                                                                                        0.0s
- => => writing image sha256:09bf3ee1                                                                           0.0s
- => => naming to docker.io/library/vk-bot                                                                      0.0s
+[+] Building 101.0s (16/16) FINISHED                                                                                                               
+ => [internal] load build definition from Dockerfile                                0.0s
+ => => transferring dockerfile: 37B                                                 0.0s
+ => [internal] load .dockerignore                                                   0.0s
+ => => transferring context: 2B                                                     0.0s
+ => [internal] load metadata for docker.io/library/golang:alpine                    2.0s
+ => [internal] load metadata for docker.io/library/alpine:latest                    2.1s
+ => [auth] library/golang:pull token for registry-1.docker.io                       0.0s
+ => [auth] library/alpine:pull token for registry-1.docker.io                       0.0s
+ => [stage-1 1/4] FROM docker.io/library/alpine@sha256:02bb6f                       0.0s
+ => [builder 1/4] FROM docker.io/library/golang:alpine@sha256:913de9                0.0s
+ => [internal] load build context                                                   0.1s
+ => => transferring context: 30.90kB                                                0.0s
+ => CACHED [builder 2/4] WORKDIR /app                                               0.0s
+ => [builder 3/4] COPY . .                                                          0.1s
+ => [builder 4/4] RUN go build -o bot cmd/server/main.go                            98.7s
+ => CACHED [stage-1 2/4] WORKDIR /app                                               0.0s
+ => CACHED [stage-1 3/4] COPY --from=builder /app/bot .                             0.0s
+ => CACHED [stage-1 4/4] COPY --from=builder /app/.env .                            0.0s
+ => exporting to image                                                              0.0s
+ => => exporting layers                                                             0.0s
+ => => writing image sha256:87e804                                                  0.0s
+ => => naming to docker.io/library/vk-bot                                           0.0s
  ```
  2. Запуск в контейнере
  ```bash
